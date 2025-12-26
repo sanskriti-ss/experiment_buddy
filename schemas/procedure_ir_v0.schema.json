@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/procedure_ir_v0.schema.json",
+  "title": "ProcedureIRV0",
+  "description": "Intermediate representation for experimental procedures extracted from papers, protocols, or lab notes. Captures steps, actions, parameters, and missingness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source", "steps"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "procedure_ir_v0"
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["paper_procedure_paste", "methods_section", "supplement", "protocol_repository", "lab_notes", "other"],
+          "description": "The origin of the procedure text"
+        },
+        "citation": {
+          "type": "string",
+          "description": "Optional: DOI, PMID, arXiv ID, or full citation string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional: Direct URL to the source"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 20,
+          "description": "The raw procedure text extracted from the source"
+        },
+        "section": {
+          "type": "string",
+          "description": "Optional: Which section of the paper (e.g., 'Methods', 'Materials and Methods', 'Supplementary Methods')"
+        }
+      }
+    },
+
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" },
+      "description": "Ordered list of procedure steps"
+    },
+
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entity" },
+      "description": "Optional: Global catalog of entities (reagents, samples, instruments) used across all steps"
+    },
+
+    "extraction_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extractor_name": {
+          "type": "string",
+          "description": "Name of the extraction system (e.g., 'dedalus-gpt4', 'regex-v0')"
+        },
+        "extractor_version": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model used for extraction (e.g., 'openai/gpt-4o-mini')"
+        },
+        "extraction_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "confidence_overall": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall confidence score for the extraction"
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "raw_text", "action"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$",
+          "description": "Unique identifier for this step (e.g., 'step_1', 'fixation')"
+        },
+        "raw_text": {
+          "type": "string",
+          "description": "The original text describing this step"
+        },
+
+        "action": {
+          "type": "string",
+          "enum": [
+            "prepare_sample",
+            "fix",
+            "permeabilize",
+            "block",
+            "stain",
+            "wash",
+            "incubate",
+            "mount",
+            "image",
+            "calibrate",
+            "qc_check",
+            "analyze",
+            "centrifuge",
+            "aspirate",
+            "add_reagent",
+            "mix",
+            "heat",
+            "cool",
+            "other"
+          ],
+          "description": "The type of action performed in this step"
+        },
+
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entityRef" },
+          "description": "Entities consumed or used as input in this step"
+        },
+
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/parameter" },
+          "description": "Experimental parameters for this step"
+        },
+
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/entityRef" },
+          "description": "Entities produced or modified by this step"
+        },
+
+        "missing_required": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Parameter names that are required for this action but were not found in the text"
+        },
+
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for this step's extraction"
+        },
+
+        "notes": {
+          "type": "string",
+          "description": "Optional: Additional context or extraction notes"
+        }
+      }
+    },
+
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name (e.g., 'temperature_c', 'incubation_min', 'concentration_uM', 'exposure_ms', 'objective_na')"
+        },
+        "value": {
+          "description": "The parameter value (can be number, string, or null if not specified)"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (e.g., 'celsius', 'minutes', 'uM', 'ms')"
+        },
+        "span": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": { "type": "integer", "minimum": 0 },
+            "end": { "type": "integer", "minimum": 0 }
+          },
+          "description": "Character span in raw_text where this parameter was found"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["sample", "reagent", "antibody", "dye", "instrument", "objective", "container", "software", "file", "other"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the entity"
+        },
+        "catalog_number": {
+          "type": "string",
+          "description": "Optional: Catalog/part number"
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Optional: Vendor/manufacturer name"
+        },
+        "rrid": {
+          "type": "string",
+          "description": "Optional: Research Resource Identifier (RRID)"
+        }
+      }
+    },
+
+    "entityRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "Reference to entity.id if entity catalog exists, otherwise raw string extracted from text"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of this entity in the step (e.g., 'primary_antibody', 'blocking_buffer', 'microscope', 'sample_plate')"
+        }
+      }
+    }
+  }
+}

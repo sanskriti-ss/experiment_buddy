@@ -1,0 +1,21 @@
+Cell Culture and Sample Preparation
+
+Human induced pluripotent stem cells (hiPSCs) were maintained in mTeSR Plus medium (STEMCELL Technologies) on Matrigel-coated plates. For cardiac differentiation, cells were dissociated using Accutase and seeded at 1.5 × 10^5 cells/cm^2. Differentiation was initiated using the small molecule Wnt modulation protocol. Briefly, cells were treated with 6 μM CHIR99021 (Tocris) in RPMI/B27-insulin for 48 hours, followed by 2 μM Wnt-C59 (Tocris) for 48 hours. Cells were then maintained in RPMI/B27 with medium changes every 2-3 days.
+
+Immunofluorescence Staining
+
+At day 30 of differentiation, cardiac organoids were fixed with 4% paraformaldehyde (Electron Microscopy Sciences, Cat# 15710) in PBS for 20 minutes at room temperature. After fixation, samples were washed 3 times with PBS for 10 minutes each. Permeabilization was performed using 0.5% Triton X-100 in PBS for 45 minutes at room temperature with gentle rocking. Samples were blocked in blocking buffer (5% normal donkey serum, Jackson ImmunoResearch, Cat# 017-000-121, plus 0.1% Triton X-100 in PBS) for 2 hours at room temperature.
+
+Primary antibodies were diluted in blocking buffer as follows: anti-cardiac troponin T (cTnT, 1:200, Abcam ab45932), anti-α-actinin (1:400, Sigma A7811), and anti-connexin 43 (1:100, Cell Signaling 3512). Samples were incubated with primary antibodies overnight at 4°C with gentle agitation. Following primary antibody incubation, organoids were washed 5 times with PBS containing 0.1% Triton X-100 for 15 minutes per wash.
+
+Secondary antibodies (Alexa Fluor 488 donkey anti-mouse, 1:500, Thermo A21202; Alexa Fluor 568 donkey anti-rabbit, 1:500, Thermo A10042; Alexa Fluor 647 donkey anti-goat, 1:500, Thermo A21447) were applied in blocking buffer for 3 hours at room temperature in the dark. Nuclei were counterstained with DAPI (5 μg/mL, Thermo D1306) for 15 minutes at room temperature. Samples were washed and mounted using ProLong Diamond Antifade Mountant (Thermo P36970).
+
+Confocal Microscopy
+
+Imaging was performed on a Zeiss LSM 980 confocal microscope equipped with an Airyscan 2 detector. A Plan-Apochromat 40x/1.4 NA oil immersion objective was used for all acquisitions. Three laser lines were used: 405 nm (DAPI), 488 nm (Alexa 488), and 561 nm (Alexa 568). Laser power was set at 2% for 405 nm, 3% for 488 nm, and 4% for 561 nm to minimize photobleaching. Detector gain was optimized for each channel to utilize the full dynamic range without saturation. 
+
+Z-stacks were acquired with a step size of 0.3 μm covering the full thickness of the organoid (typically 40-60 μm). Image dimensions were 1024 × 1024 pixels with a pixel dwell time of 1.0 μs. Pixel size in XY was 0.104 μm after Nyquist sampling calculations. For time-lapse imaging, frames were acquired every 30 seconds for 10 minutes to capture spontaneous contractions.
+
+Image Analysis
+
+All images were processed using Fiji (ImageJ v2.3.0). Background subtraction was performed using a rolling ball radius of 50 pixels. Maximum intensity projections were generated from z-stacks for overview images. For quantification, regions of interest (ROIs) were manually drawn around individual cardiomyocytes. Sarcomere spacing was measured from line profiles of α-actinin staining using the "Plot Profile" function. At least 30 measurements were taken per condition from 3 independent differentiation batches.

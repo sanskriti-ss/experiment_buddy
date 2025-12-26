@@ -1,0 +1,317 @@
+{
+  "schema_version": "procedure_ir_v0",
+  "source": {
+    "type": "methods_section",
+    "citation": "10.1038/s41586-020-example",
+    "url": "https://doi.org/10.1038/s41586-020-example",
+    "section": "Materials and Methods",
+    "text": "Human iPSC-derived cardiac organoids were fixed in 4% paraformaldehyde (Electron Microscopy Sciences) for 15 minutes at room temperature. After fixation, samples were washed three times with PBS for 5 minutes each. Permeabilization was performed using 0.3% Triton X-100 in PBS for 30 minutes. Samples were then blocked with 5% normal donkey serum (Jackson ImmunoResearch) in PBS with 0.1% Triton X-100 for 1 hour at room temperature. Primary antibodies against cardiac troponin I (1:200, Abcam ab47003) and α-actinin (1:500, Sigma A7811) were diluted in blocking buffer and incubated overnight at 4°C. After washing, secondary antibodies (Alexa Fluor 488 and 568, 1:500, Thermo Fisher) were applied for 2 hours at room temperature. Nuclei were counterstained with DAPI. Samples were mounted using ProLong Diamond antifade mountant. Imaging was performed on a Zeiss LSM 880 confocal microscope using a 40x/1.3 NA oil immersion objective. Z-stacks were acquired with 0.5 µm step size covering the entire organoid thickness. Laser power and gain settings were optimized to minimize photobleaching while maintaining signal-to-noise ratio."
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "raw_text": "Human iPSC-derived cardiac organoids were fixed in 4% paraformaldehyde (Electron Microscopy Sciences) for 15 minutes at room temperature.",
+      "action": "fix",
+      "parameters": [
+        {
+          "name": "fixative",
+          "value": "paraformaldehyde",
+          "unit": "chemical"
+        },
+        {
+          "name": "fixative_concentration",
+          "value": 4,
+          "unit": "percent"
+        },
+        {
+          "name": "duration_min",
+          "value": 15,
+          "unit": "minutes"
+        },
+        {
+          "name": "temperature",
+          "value": "room temperature",
+          "unit": "ambient"
+        },
+        {
+          "name": "vendor",
+          "value": "Electron Microscopy Sciences"
+        }
+      ],
+      "inputs": [
+        {
+          "ref": "cardiac_organoids",
+          "role": "sample"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.98
+    },
+    {
+      "id": "step_2",
+      "raw_text": "After fixation, samples were washed three times with PBS for 5 minutes each.",
+      "action": "wash",
+      "parameters": [
+        {
+          "name": "wash_buffer",
+          "value": "PBS",
+          "unit": "solution"
+        },
+        {
+          "name": "number_of_washes",
+          "value": 3,
+          "unit": "count"
+        },
+        {
+          "name": "duration_per_wash_min",
+          "value": 5,
+          "unit": "minutes"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "step_3",
+      "raw_text": "Permeabilization was performed using 0.3% Triton X-100 in PBS for 30 minutes.",
+      "action": "permeabilize",
+      "parameters": [
+        {
+          "name": "detergent",
+          "value": "Triton X-100",
+          "unit": "chemical"
+        },
+        {
+          "name": "detergent_concentration",
+          "value": 0.3,
+          "unit": "percent"
+        },
+        {
+          "name": "duration_min",
+          "value": 30,
+          "unit": "minutes"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.97
+    },
+    {
+      "id": "step_4",
+      "raw_text": "Samples were then blocked with 5% normal donkey serum (Jackson ImmunoResearch) in PBS with 0.1% Triton X-100 for 1 hour at room temperature.",
+      "action": "block",
+      "parameters": [
+        {
+          "name": "blocking_agent",
+          "value": "normal donkey serum",
+          "unit": "reagent"
+        },
+        {
+          "name": "concentration",
+          "value": 5,
+          "unit": "percent"
+        },
+        {
+          "name": "duration_min",
+          "value": 60,
+          "unit": "minutes"
+        },
+        {
+          "name": "temperature",
+          "value": "room temperature"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.96
+    },
+    {
+      "id": "step_5",
+      "raw_text": "Primary antibodies against cardiac troponin I (1:200, Abcam ab47003) and α-actinin (1:500, Sigma A7811) were diluted in blocking buffer and incubated overnight at 4°C.",
+      "action": "stain",
+      "parameters": [
+        {
+          "name": "reagent_name",
+          "value": "cardiac troponin I antibody",
+          "unit": "antibody"
+        },
+        {
+          "name": "concentration_or_dilution",
+          "value": "1:200",
+          "unit": "dilution"
+        },
+        {
+          "name": "reagent_catalog_number",
+          "value": "ab47003"
+        },
+        {
+          "name": "reagent_vendor",
+          "value": "Abcam"
+        },
+        {
+          "name": "temperature",
+          "value": "4",
+          "unit": "celsius"
+        }
+      ],
+      "missing_required": ["duration_min"],
+      "confidence": 0.92,
+      "notes": "Duration specified as 'overnight' but not quantified in hours"
+    },
+    {
+      "id": "step_5b",
+      "raw_text": "Primary antibodies against cardiac troponin I (1:200, Abcam ab47003) and α-actinin (1:500, Sigma A7811) were diluted in blocking buffer and incubated overnight at 4°C.",
+      "action": "stain",
+      "parameters": [
+        {
+          "name": "reagent_name",
+          "value": "α-actinin antibody",
+          "unit": "antibody"
+        },
+        {
+          "name": "concentration_or_dilution",
+          "value": "1:500",
+          "unit": "dilution"
+        },
+        {
+          "name": "reagent_catalog_number",
+          "value": "A7811"
+        },
+        {
+          "name": "reagent_vendor",
+          "value": "Sigma"
+        },
+        {
+          "name": "temperature",
+          "value": "4",
+          "unit": "celsius"
+        }
+      ],
+      "missing_required": ["duration_min"],
+      "confidence": 0.92
+    },
+    {
+      "id": "step_6",
+      "raw_text": "After washing, secondary antibodies (Alexa Fluor 488 and 568, 1:500, Thermo Fisher) were applied for 2 hours at room temperature.",
+      "action": "stain",
+      "parameters": [
+        {
+          "name": "reagent_name",
+          "value": "Alexa Fluor 488 secondary antibody",
+          "unit": "antibody"
+        },
+        {
+          "name": "concentration_or_dilution",
+          "value": "1:500",
+          "unit": "dilution"
+        },
+        {
+          "name": "duration_min",
+          "value": 120,
+          "unit": "minutes"
+        },
+        {
+          "name": "temperature",
+          "value": "room temperature"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.94
+    },
+    {
+      "id": "step_7",
+      "raw_text": "Nuclei were counterstained with DAPI.",
+      "action": "stain",
+      "parameters": [
+        {
+          "name": "reagent_name",
+          "value": "DAPI",
+          "unit": "dye"
+        }
+      ],
+      "missing_required": ["concentration_or_dilution", "duration_min", "temperature"],
+      "confidence": 0.6,
+      "notes": "No concentration, duration, or temperature specified"
+    },
+    {
+      "id": "step_8",
+      "raw_text": "Samples were mounted using ProLong Diamond antifade mountant.",
+      "action": "mount",
+      "parameters": [
+        {
+          "name": "mounting_medium",
+          "value": "ProLong Diamond antifade mountant",
+          "unit": "reagent"
+        }
+      ],
+      "missing_required": [],
+      "confidence": 0.9
+    },
+    {
+      "id": "step_9",
+      "raw_text": "Imaging was performed on a Zeiss LSM 880 confocal microscope using a 40x/1.3 NA oil immersion objective.",
+      "action": "image",
+      "parameters": [
+        {
+          "name": "microscope_type",
+          "value": "confocal",
+          "unit": "instrument_type"
+        },
+        {
+          "name": "microscope_model",
+          "value": "Zeiss LSM 880"
+        },
+        {
+          "name": "objective_magnification",
+          "value": 40,
+          "unit": "x"
+        },
+        {
+          "name": "objective_na",
+          "value": 1.3,
+          "unit": "numerical_aperture"
+        },
+        {
+          "name": "immersion_medium",
+          "value": "oil"
+        }
+      ],
+      "missing_required": ["channels"],
+      "confidence": 0.88,
+      "notes": "Channels not explicitly listed in this sentence"
+    },
+    {
+      "id": "step_10",
+      "raw_text": "Z-stacks were acquired with 0.5 µm step size covering the entire organoid thickness.",
+      "action": "image",
+      "parameters": [
+        {
+          "name": "z_step_um",
+          "value": 0.5,
+          "unit": "micrometers"
+        },
+        {
+          "name": "imaging_mode",
+          "value": "z-stack"
+        }
+      ],
+      "missing_required": ["microscope_type", "objective_magnification", "objective_na", "channels"],
+      "confidence": 0.75,
+      "notes": "This continues the previous imaging step but parameters should be repeated"
+    },
+    {
+      "id": "step_11",
+      "raw_text": "Laser power and gain settings were optimized to minimize photobleaching while maintaining signal-to-noise ratio.",
+      "action": "image",
+      "parameters": [],
+      "missing_required": ["microscope_type", "objective_magnification", "objective_na", "channels"],
+      "confidence": 0.5,
+      "notes": "Settings mentioned but not specified quantitatively"
+    }
+  ],
+  "extraction_metadata": {
+    "extractor_name": "dedalus-llm-extractor",
+    "extractor_version": "0.1.0",
+    "model": "openai/gpt-4o-mini",
+    "extraction_timestamp": "2025-12-25T10:30:00Z",
+    "confidence_overall": 0.87
+  }
+}

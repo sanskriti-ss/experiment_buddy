@@ -1,0 +1,49 @@
+{
+  "schema_version": "microscopy_v0",
+  "study": {
+    "title": "Invalid plan - missing required fields",
+    "objective": "This plan is intentionally broken to test validation",
+    "assay_type": "confocal_microscopy"
+  },
+  "design": {
+    "conditions": [
+      { "id": "test", "name": "Test condition" }
+    ]
+  },
+  "samples": {
+    "sample_type": "test cells",
+    "preparation": {
+      "mounting": "standard"
+    },
+    "fluorophores": [
+      { "name": "GFP" }
+    ]
+  },
+  "acquisition": {
+    "microscope": {
+      "modality": "confocal",
+      "instrument_id": "scope_01",
+      "objective": {
+        "magnification_x": 20,
+        "numerical_aperture": 0.75
+      }
+    },
+    "channels": [
+      {
+        "name": "GFP",
+        "excitation_nm": 488,
+        "emission_nm": 510,
+        "exposure_ms": -5
+      }
+    ]
+  },
+  "outputs": {
+    "raw_data": {
+      "format": "ome_tiff",
+      "storage_location": "/data/test"
+    },
+    "naming": {
+      "pattern": "{date}_{condition}.tif"
+    }
+  }
+}

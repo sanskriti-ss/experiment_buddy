@@ -1,0 +1,71 @@
+{
+  "schema_version": "microscopy_v0",
+  "study": {
+    "title": "Fluorescent calcium dynamics in heart organoids",
+    "objective": "Quantify calcium transient amplitude and beat-to-beat variability under drug vs vehicle conditions using time-lapse fluorescence microscopy.",
+    "assay_type": "confocal_microscopy",
+    "primary_outcomes": ["calcium_transient_amplitude", "beat_rate"]
+  },
+  "design": {
+    "conditions": [
+      { "id": "vehicle", "name": "Vehicle control" },
+      { "id": "drugA", "name": "Drug A 1uM", "expected_direction": "increase" }
+    ],
+    "replicates": { "biological_n": 6, "technical_n_per_bio": 2 },
+    "randomization": { "run_order_randomized": true, "blocking_variables": ["plate_id"] },
+    "batch_variables_to_record": ["date", "operator", "instrument_id", "plate_id", "well_id", "exposure_time", "laser_power_or_intensity"],
+    "controls": [
+      { "type": "unstained", "applies_to": "each_batch", "description": "Unstained organoids imaged for autofluorescence baseline." },
+      { "type": "single_color", "applies_to": "once_per_session", "channels": ["GCaMP"], "description": "Single-color control for bleed-through checks." }
+    ]
+  },
+  "samples": {
+    "sample_type": "fluorescing heart organoids",
+    "live_or_fixed": "live",
+    "preparation": {
+      "mounting": "Organoids in imaging dish with appropriate medium; minimal movement constraints.",
+      "timepoints": ["day14"]
+    },
+    "fluorophores": [
+      { "name": "GCaMP", "target": "calcium activity", "excitation_nm": 488, "emission_nm": 510 }
+    ],
+    "plate_layout": { "plate_id": "P001", "plate_format": "24_well", "well_ids": ["A1", "A2", "A3", "A4"] }
+  },
+  "acquisition": {
+    "microscope": {
+      "modality": "confocal",
+      "instrument_id": "confocal_01",
+      "manufacturer": "ExampleCorp",
+      "model": "X1000",
+      "objective": { "magnification_x": 20, "numerical_aperture": 0.75, "immersion": "air" },
+      "detector": { "type": "sCMOS", "binning": 1, "gain": 1.0 }
+    },
+    "channels": [
+      { "name": "GCaMP", "excitation_nm": 488, "emission_nm": 510, "exposure_ms": 30, "laser_power_percent": 2.0 }
+    ],
+    "z_stack": { "enabled": false },
+    "time_lapse": { "enabled": true, "interval_s": 0.2, "duration_s": 60 },
+    "environment": { "temperature_c": 37, "co2_percent": 5, "humidity_percent": 90 },
+    "qc_plan": { "check_saturation": true, "multicolor_beads": false, "flat_field_correction_reference": false, "dark_noise_reference": false }
+  },
+  "processing_plan": {
+    "steps": [
+      { "name": "denoising", "notes": "Light temporal smoothing prior to peak detection." },
+      { "name": "tracking", "notes": "If organoid drift occurs, apply registration/tracking." },
+      { "name": "intensity_quantification", "notes": "Extract per-organoid fluorescence traces and compute transient metrics." }
+    ],
+    "software": [
+      { "name": "Fiji", "version": "2.x", "url": "https://fiji.sc/" }
+    ]
+  },
+  "outputs": {
+    "raw_data": { "format": "ome_tiff", "storage_location": "s3://lab-bucket/organoids/calcium/" },
+    "derived_data": [
+      { "type": "summary_table", "storage_location": "s3://lab-bucket/organoids/calcium/results/" }
+    ],
+    "naming": {
+      "pattern": "{date}_{condition}_{plate_id}_{well_id}_{organoid_id}_{channel}_{t}.ome.tif",
+      "required_tokens": ["date", "condition", "instrument_id", "plate_id", "well_id"]
+    }
+  }
+}
