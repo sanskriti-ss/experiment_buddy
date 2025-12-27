@@ -72,17 +72,46 @@ class PaperFetcher:
         client = AsyncDedalus(api_key=self.api_key)
         runner = DedalusRunner(client)
         
-        # Step 1: Fetch paper content using Exa search MCP
+        # Step 1: Fetch paper content using web search MCP
         fetch_prompt = self._build_fetch_prompt(normalized_url)
         
         try:
-            # Use Exa search MCP to fetch paper content
-            fetch_response = await runner.run(
-                input=fetch_prompt,
-                model=self.model,
-                mcp_servers=["exa-mcp/exa-mcp-server"]
-            )
-            paper_text = fetch_response.final_output
+            # Try Brave Search MCP first (better for content extraction)
+            # Then fall back to Exa
+            mcp_attempts = [
+                ("tsion/brave-search-mcp", "Brave Search"),
+                ("joerup/exa-mcp", "Exa")
+            ]
+            
+            paper_text = None
+            errors = []
+            
+            for mcp_server, name in mcp_attempts:
+                try:
+                    fetch_response = await runner.run(
+                        input=fetch_prompt,
+                        model=self.model,
+                        mcp_servers=[mcp_server]
+                    )
+                    paper_text = fetch_response.final_output
+                    
+                    # Check if we got actual content
+                    if paper_text and len(paper_text) > 500:
+                        break
+                    else:
+                        errors.append(f"{name}: only {len(paper_text) if paper_text else 0} chars")
+                except Exception as e:
+                    errors.append(f"{name}: {str(e)}")
+                    continue
+            
+            if not paper_text or len(paper_text) < 500:
+                raise RuntimeError(
+                    f"Could not fetch sufficient paper content. Attempts: {'; '.join(errors)}. "
+                    f"\n\nRECOMMENDATION: Use 'extract-text' command instead:\n"
+                    f"  1. Open {normalized_url} in browser\n"
+                    f"  2. Copy Methods section to a text file\n"
+                    f"  3. Run: python3 -m planlint.cli extract-text methods.txt"
+                )
             
             # Step 2: Extract Methods section using LLM
             extract_prompt = self._build_extraction_prompt(paper_text, normalized_url)
@@ -145,19 +174,18 @@ class PaperFetcher:
     
     def _build_fetch_prompt(self, url: str) -> str:
         """Build prompt for fetching paper content."""
-        return f"""I need you to retrieve the COMPLETE full text of this scientific paper: {url}
+        return f"""I need the FULL TEXT CONTENT of this webpage: {url}
 
-CRITICAL REQUIREMENTS:
-1. Get the FULL TEXT of the paper, not just the abstract or title
-2. Make sure to include the complete Methods/Materials and Methods section
-3. If you can only access the abstract, explicitly state "ABSTRACT ONLY"
-4. For PubMed Central (PMC) URLs, retrieve the full article content
-5. If paywalled, try alternative sources: PubMed Central, Europe PMC, arXiv, bioRxiv, author's institutional repository
+TASK: Fetch and return the complete text content from this URL.
 
-IMPORTANT: Return the complete paper text including all sections. If you cannot access the full text, respond with:
-"ERROR: Full text not accessible. Only abstract available."
+This is a scientific paper page. I need:
+- The complete article text (not just abstract)
+- All sections including Methods/Materials and Methods
+- The raw text content as it appears on the page
 
-Otherwise, return the complete paper content."""
+URL: {url}
+
+Please fetch this page and return ALL the text content you can access."""
     
     def _build_extraction_prompt(self, paper_text: str, url: str) -> str:
         """Build prompt for extracting Methods section."""

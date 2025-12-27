@@ -122,6 +122,15 @@
             "mix",
             "heat",
             "cool",
+            "culture",
+            "differentiation",
+            "treat",
+            "observe",
+            "seed",
+            "media_change",
+            "extract",
+            "add",
+            "replace",
             "other"
           ],
           "description": "The type of action performed in this step"

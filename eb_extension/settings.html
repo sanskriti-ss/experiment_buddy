@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Buddy - Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: monospace;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .status.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      display: block;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      display: block;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+      display: block;
+    }
+
+    .platform-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .platform-item {
+      padding: 12px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .platform-item .emoji {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .footer {
+      padding: 24px;
+      background: #f9f9f9;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    .version {
+      margin-bottom: 8px;
+    }
+
+    .links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .links a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔬 Experiment Buddy</h1>
+      <p>Settings & Configuration</p>
+    </div>
+
+    <div class="content">
+      <!-- Status messages -->
+      <div id="status" class="status"></div>
+
+      <!-- Backend Configuration -->
+      <div class="section">
+        <div class="section-title">Backend Configuration</div>
+        
+        <div class="form-group">
+          <label for="apiUrl">Backend API URL</label>
+          <input
+            type="url"
+            id="apiUrl"
+            placeholder="http://localhost:8888"
+            value="http://localhost:8888"
+          />
+          <div class="help-text">
+            URL of your Experiment Buddy backend server
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button id="testConnection" class="btn-secondary" style="width: 100%;">
+            Test Connection
+          </button>
+        </div>
+      </div>
+
+      <!-- Analysis Settings -->
+      <div class="section">
+        <div class="section-title">Analysis Settings</div>
+
+        <div class="form-group">
+          <label for="analysisModel">LLM Model</label>
+          <select id="analysisModel">
+            <option value="openai/gpt-4o-mini">GPT-4o Mini (Fast & Cheap)</option>
+            <option value="openai/gpt-4o">GPT-4o (Most Capable)</option>
+            <option value="openai/gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="anthropic/claude-3-sonnet">Claude 3 Sonnet</option>
+            <option value="anthropic/claude-3-opus">Claude 3 Opus</option>
+          </select>
+          <div class="help-text">
+            Model to use for extracting and analyzing procedures
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Toggles -->
+      <div class="section">
+        <div class="section-title">Features</div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="autoDetect" checked>
+          <label for="autoDetect">Auto-detect procedure sections</label>
+        </div>
+
+        <div class="checkbox-group" style="margin-top: 8px;">
+          <input type="checkbox" id="enableNotifications" checked>
+          <label for="enableNotifications">Show notifications</label>
+        </div>
+      </div>
+
+      <!-- Supported Platforms -->
+      <div class="section">
+        <div class="section-title">Supported Platforms</div>
+        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+          Analyze procedures from scientific papers and research notes on:
+        </p>
+        <div class="platform-list">
+          <div class="platform-item">
+            <span class="emoji">📄</span>
+            <div>Google Docs</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">📝</span>
+            <div>Notion</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">🧠</span>
+            <div>Obsidian</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">🌳</span>
+            <div>Roam Research</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">📓</span>
+            <div>OneNote</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">🎯</span>
+            <div>Evernote</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">📚</span>
+            <div>Confluence</div>
+          </div>
+          <div class="platform-item">
+            <span class="emoji">📰</span>
+            <div>Scientific Papers</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="button-group">
+        <button id="saveButton" class="btn-primary">Save Settings</button>
+        <button id="resetButton" class="btn-secondary">Reset to Defaults</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="version">Experiment Buddy v1.0.0</div>
+      <div class="links">
+        <a href="https://github.com/sanskriti-ss/experiment_buddy" target="_blank">GitHub</a>
+        <a href="https://github.com/sanskriti-ss/experiment_buddy#readme" target="_blank">Documentation</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load settings on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSettings();
+    });
+
+    /**
+     * Load settings from Chrome storage
+     */
+    function loadSettings() {
+      chrome.storage.sync.get(
+        {
+          apiBaseUrl: 'http://localhost:8888',
+          analysisModel: 'openai/gpt-4o-mini',
+          autoDetectProcedure: true,
+          enableNotifications: true,
+        },
+        items => {
+          document.getElementById('apiUrl').value = items.apiBaseUrl;
+          document.getElementById('analysisModel').value = items.analysisModel;
+          document.getElementById('autoDetect').checked = items.autoDetectProcedure;
+          document.getElementById('enableNotifications').checked = items.enableNotifications;
+        }
+      );
+    }
+
+    /**
+     * Save settings
+     */
+    function saveSettings() {
+      const settings = {
+        apiBaseUrl: document.getElementById('apiUrl').value,
+        analysisModel: document.getElementById('analysisModel').value,
+        autoDetectProcedure: document.getElementById('autoDetect').checked,
+        enableNotifications: document.getElementById('enableNotifications').checked,
+      };
+
+      chrome.storage.sync.set(settings, () => {
+        showStatus('Settings saved!', 'success');
+      });
+    }
+
+    /**
+     * Reset to default settings
+     */
+    function resetSettings() {
+      if (confirm('Are you sure you want to reset all settings to defaults?')) {
+        chrome.storage.sync.clear(() => {
+          loadSettings();
+          showStatus('Settings reset to defaults', 'info');
+        });
+      }
+    }
+
+    /**
+     * Test backend connection
+     */
+    async function testConnection() {
+      const url = document.getElementById('apiUrl').value;
+      const button = document.getElementById('testConnection');
+      const originalText = button.textContent;
+
+      button.disabled = true;
+      button.textContent = 'Testing...';
+
+      try {
+        const response = await fetch(`${url}/health`, {
+          method: 'GET',
+          timeout: 5000,
+        });
+
+        if (response.ok) {
+          showStatus('✓ Successfully connected to backend', 'success');
+        } else {
+          showStatus(
+            `✗ Backend returned ${response.status}: ${response.statusText}`,
+            'error'
+          );
+        }
+      } catch (error) {
+        showStatus(
+          `✗ Failed to connect: ${error.message}`,
+          'error'
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    /**
+     * Show status message
+     */
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+
+      setTimeout(() => {
+        statusEl.className = 'status';
+      }, 4000);
+    }
+
+    // Event listeners
+    document.getElementById('saveButton').addEventListener('click', saveSettings);
+    document.getElementById('resetButton').addEventListener('click', resetSettings);
+    document.getElementById('testConnection').addEventListener('click', testConnection);
+  </script>
+</body>
+</html>

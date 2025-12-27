@@ -22,7 +22,7 @@ class LLMExtractor:
     Converts free-text protocols into procedure_ir_v0 JSON schema.
     """
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "openai/gpt-4o-mini"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "anthropic/claude-opus-4-5"):
         """
         Initialize the extractor.
         
@@ -255,4 +255,16 @@ Now extract the procedure from the provided Methods text:"""
         # Ensure schema_version is set
         procedure_ir["schema_version"] = "procedure_ir_v0"
         
+        # Clean up None values in units (convert to empty strings)
+        self._clean_none_units(procedure_ir)
+        
         return procedure_ir
+
+    def _clean_none_units(self, procedure_ir: Dict[str, Any]) -> None:
+        """Clean up None values in parameter units by converting them to empty strings."""
+        if "steps" in procedure_ir:
+            for step in procedure_ir["steps"]:
+                if "parameters" in step:
+                    for param in step["parameters"]:
+                        if param.get("unit") is None:
+                            param["unit"] = ""

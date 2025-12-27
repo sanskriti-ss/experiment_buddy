@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Buddy</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .header {
+      padding: 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .status {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .status.connected {
+      background: rgba(76, 175, 80, 0.2);
+    }
+
+    .status.disconnected {
+      background: rgba(244, 67, 54, 0.2);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .action-button {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .action-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .action-button .icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .action-button .text {
+      flex: 1;
+    }
+
+    .info-section {
+      margin-top: 20px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 11px;
+      opacity: 0.7;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔬 Experiment Buddy</h1>
+    <p>Analyze research procedures</p>
+  </div>
+
+  <div class="content">
+    <!-- Backend Status -->
+    <div id="backend-status" class="status">
+      <span class="loading"></span>
+      Checking backend connection...
+    </div>
+
+    <!-- Current Page Info -->
+    <div id="page-info" class="info-section">
+      <div class="info-item">
+        <span>Platform:</span>
+        <span id="current-platform">Detecting...</span>
+      </div>
+      <div class="info-item">
+        <span>Status:</span>
+        <span id="platform-status">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button id="analyze-selection" class="action-button" disabled>
+        <span class="icon">✂️</span>
+        <span class="text">Analyze Selected Text</span>
+      </button>
+
+      <button id="analyze-full" class="action-button" disabled>
+        <span class="icon">📄</span>
+        <span class="text">Analyze Full Document</span>
+      </button>
+
+      <button id="analyze-methods" class="action-button" disabled>
+        <span class="icon">🔍</span>
+        <span class="text">Find & Analyze Methods</span>
+      </button>
+
+      <button id="open-settings" class="action-button">
+        <span class="icon">⚙️</span>
+        <span class="text">Settings</span>
+      </button>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instructions" class="info-section" style="margin-top: 16px;">
+      <p>Go to Google Docs, Notion, or other supported platforms to analyze experimental procedures.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>Experiment Buddy v1.0.0</div>
+    <div>For reproducible research</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

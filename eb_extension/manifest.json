@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "Experiment Buddy - Protocol Gap Analyzer",
+  "version": "1.0.0",
+  "description": "Analyze scientific papers and experimental notes for reproducibility gaps",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.dedaluslabs.ai/*",
+    "https://docs.google.com/*",
+    "https://notion.so/*",
+    "https://notion.com/*",
+    "https://obsidian.md/*",
+    "https://roamresearch.com/*",
+    "https://onenote.com/*",
+    "https://office.com/*",
+    "https://evernote.com/*",
+    "https://*.atlassian.net/*",
+    "https://*.confluence.atlassian.net/*",
+    "https://*.ncbi.nlm.nih.gov/*",
+    "https://*.nature.com/*",
+    "https://*.science.org/*",
+    "https://*.cell.com/*",
+    "https://*.springer.com/*",
+    "https://*.wiley.com/*",
+    "https://*.elsevier.com/*",
+    "https://arxiv.org/*",
+    "https://*.biorxiv.org/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://docs.google.com/*",
+        "https://notion.so/*",
+        "https://notion.com/*",
+        "https://obsidian.md/*",
+        "https://roamresearch.com/*",
+        "https://onenote.com/*",
+        "https://office.com/*",
+        "https://evernote.com/*",
+        "https://*.atlassian.net/*",
+        "https://*.confluence.atlassian.net/*",
+        "https://*.ncbi.nlm.nih.gov/*",
+        "https://*.nature.com/*",
+        "https://*.science.org/*",
+        "https://*.cell.com/*",
+        "https://*.springer.com/*",
+        "https://*.wiley.com/*",
+        "https://*.elsevier.com/*",
+        "https://arxiv.org/*",
+        "https://*.biorxiv.org/*"
+      ],
+      "js": [
+        "content-adapters/platform-detector.js",
+        "content-adapters/content-extractor.js",
+        "content.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "analysis.html",
+        "settings.html"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
