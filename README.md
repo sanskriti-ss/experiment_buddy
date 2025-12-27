@@ -1,6 +1,6 @@
 # Experiment Buddy
 
-A modular "Plan Linter" system for experimental design in biology research. This tool analyzes structured experiment plans and provides suggestions for improving data collection, processing, and experimental design.
+A chrome extension prototype: just run it on any research paper that you're interested in replicating (in order to get a quick look for what is missing from the protocol that would be good to specify), or any proposed protocol doc that you wrote (to get suggestions on what you can improve in your research protocol, or any confounders that you are missing).
 
 ## Features
 
@@ -12,7 +12,7 @@ Validates structured experiment plans against JSON Schema, catching common exper
 - Parallelization opportunities
 - Metadata completeness issues
 
-### 2. Paper Procedure Extraction & Analysis (NEW! 🎉)
+### 2. Paper Procedure Extraction & Analysis
 Automatically extracts and analyzes experimental procedures from scientific papers:
 - **Fetch papers** from DOI, PubMed, arXiv, or direct URLs
 - **Extract Methods sections** using LLM + web search (Dedalus + Exa)
@@ -20,7 +20,7 @@ Automatically extracts and analyzes experimental procedures from scientific pape
 - **Flag missing details** that prevent reproducibility
 - **Generate reports** highlighting underspecified protocols
 
-## Architecture
+## 3. Architecture
 
 The system is built with modularity in mind:
 
@@ -29,17 +29,7 @@ The system is built with modularity in mind:
 3. **Adapters**: Platform-specific integrations (Benchling, Google Docs, etc.)
 4. **Renderers**: Output formatting for different contexts
 
-## Current Status: Step 2 Complete ✅
-
-### ✅ Step 1: Canonical Schema
-- Created microscopy-focused ExperimentPlan schema v0
-- Added example plan for fluorescent heart organoid imaging
-
-### ✅ Step 2: Python Validator
-- Built core validation engine (`planlint/validator.py`)
-- Created CLI tool for validating plans
-- Added comprehensive test suite with pytest
-- Implemented clear error formatting
+## Current Status: Step 2 Complete 
 
 ## Schema Structure
 
