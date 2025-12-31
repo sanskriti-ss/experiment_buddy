@@ -203,6 +203,185 @@ class ActionRequirements:
             },
             description="Image or data analysis"
         ),
+        
+        "treatment": ActionRequirement(
+            action="treatment",
+            required_params={
+                "reagent",
+                "concentration",
+                "duration_min",
+            },
+            optional_params={
+                "temperature",
+                "volume",
+                "solvent",
+                "application_method"
+            },
+            description="General treatment or drug application"
+        ),
+        
+        "seeding": ActionRequirement(
+            action="seeding",
+            required_params={
+                "cell_line",
+                "seeding_density",
+                "medium",
+            },
+            optional_params={
+                "volume",
+                "plate_type",
+                "coating",
+                "passage_number",
+                "culture_conditions"
+            },
+            description="Cell seeding and plating"
+        ),
+        
+        "process": ActionRequirement(
+            action="process",
+            required_params={
+                "method",
+            },
+            optional_params={
+                "duration_min",
+                "temperature",
+                "equipment"
+            },
+            description="General processing step"
+        ),
+        
+        "culturing": ActionRequirement(
+            action="culturing",
+            required_params={
+                "medium",
+                "duration_days",
+            },
+            optional_params={
+                "temperature",
+                "co2_percentage",
+                "humidity",
+                "feeding_schedule"
+            },
+            description="Cell or tissue culture maintenance"
+        ),
+        
+        "formation": ActionRequirement(
+            action="formation",
+            required_params={
+                "structure",
+            },
+            optional_params={
+                "conditions",
+                "duration_days",
+                "growth_factors"
+            },
+            description="Formation of biological structures"
+        ),
+        
+        "embed": ActionRequirement(
+            action="embed",
+            required_params={
+                "embedding_medium",
+            },
+            optional_params={
+                "temperature",
+                "duration_min",
+                "preparation_method"
+            },
+            description="Sample embedding for sectioning"
+        ),
+        
+        "cost_analysis": ActionRequirement(
+            action="cost_analysis",
+            required_params={
+                "method",
+            },
+            optional_params={
+                "software",
+                "parameters",
+                "comparison_groups"
+            },
+            description="Cost-effectiveness analysis"
+        ),
+        
+        "morphogenesis": ActionRequirement(
+            action="morphogenesis",
+            required_params={
+                "developmental_stage",
+            },
+            optional_params={
+                "growth_factors",
+                "duration_days",
+                "monitoring_method"
+            },
+            description="Morphological development process"
+        ),
+        
+        "signaling": ActionRequirement(
+            action="signaling",
+            required_params={
+                "pathway",
+            },
+            optional_params={
+                "ligand",
+                "concentration",
+                "duration_min"
+            },
+            description="Cell signaling pathway analysis"
+        ),
+        
+        "classification": ActionRequirement(
+            action="classification",
+            required_params={
+                "criteria",
+            },
+            optional_params={
+                "method",
+                "software",
+                "validation"
+            },
+            description="Classification or categorization step"
+        ),
+        
+        "formulation": ActionRequirement(
+            action="formulation",
+            required_params={
+                "components",
+            },
+            optional_params={
+                "ratios",
+                "mixing_method",
+                "storage_conditions"
+            },
+            description="Formulation of solutions or compounds"
+        ),
+        
+        "inhibition": ActionRequirement(
+            action="inhibition",
+            required_params={
+                "inhibitor",
+                "concentration",
+            },
+            optional_params={
+                "duration_min",
+                "target_pathway",
+                "vehicle"
+            },
+            description="Inhibition of biological processes"
+        ),
+        
+        "explanation": ActionRequirement(
+            action="explanation",
+            required_params={
+                "topic",
+            },
+            optional_params={
+                "method",
+                "references",
+                "context"
+            },
+            description="Explanatory or descriptive step"
+        ),
     }
     
     @classmethod
@@ -241,27 +420,134 @@ class ActionRequirements:
         return sorted(missing)
     
     @classmethod
-    def get_completeness_score(cls, action: str, provided_params: List[str]) -> float:
+    def get_completeness_score(cls, action: str, provided_params: List[str], raw_text: str = "") -> float:
         """
         Calculate completeness score (0-1) for a step.
         
         Args:
             action: Action type
             provided_params: List of parameter names that were found
+            raw_text: Original text of the step (optional)
             
         Returns:
             Score from 0 (nothing specified) to 1 (all required params present)
         """
+        # Check if this is non-procedural text
+        if raw_text and cls.is_non_procedural_text(raw_text):
+            return 0.1  # Very low score for background/descriptive text
+            
         required = cls.get_required_params(action)
         if not required:
-            # Unknown action type, can't score
-            return 0.5
+            # Unknown action type - check if text seems procedural
+            if raw_text and cls.seems_procedural(raw_text):
+                return 0.3  # Low score but not terrible for unknown procedural steps
+            else:
+                return 0.1  # Very low score for non-procedural unknown action
         
         provided_set = set(provided_params)
         found = len(required & provided_set)
         total = len(required)
         
         return found / total if total > 0 else 1.0
+    
+    @classmethod
+    def is_non_procedural_text(cls, text: str) -> bool:
+        """
+        Detect if text is descriptive/background rather than procedural.
+        
+        Returns True for text that describes what something is or does,
+        rather than instructions for what to do.
+        """
+        text_lower = text.lower().strip()
+        
+        # Patterns that indicate background/descriptive text
+        descriptive_patterns = [
+            # Present tense descriptions
+            "are the", "is the", "are a", "is a",
+            "play an important role", "play a role",
+            "have been", "has been", 
+            "are known to", "is known to",
+            "are essential", "is essential",
+            "are crucial", "is crucial",
+            "are required", "is required",
+            
+            # Review language
+            "studies have shown", "research has shown",
+            "it has been demonstrated", "it has been shown",
+            "previous studies", "recent studies",
+            "in the literature", "as reviewed",
+            
+            # Definition/explanation patterns
+            "which are", "that are", "this is",
+            "these are", "such as", "for example",
+            "in other words", "specifically",
+            
+            # Comparative/analytical language
+            "in contrast", "however", "moreover",
+            "furthermore", "additionally", "therefore",
+            "consequently", "as a result",
+            
+            # Abstract concepts
+            "the concept", "the idea", "the notion",
+            "the principle", "the mechanism",
+            
+            # Passive descriptions of what exists
+            "can be found", "are present", "are located",
+            "are observed", "are seen", "exist",
+        ]
+        
+        # Check if text contains multiple descriptive patterns
+        matches = sum(1 for pattern in descriptive_patterns if pattern in text_lower)
+        
+        # Also check for lack of procedural language
+        procedural_indicators = [
+            # Action verbs in imperative or past tense
+            "add", "remove", "wash", "incubate", "mix",
+            "centrifuge", "pipet", "transfer", "dilute",
+            "culture", "plate", "seed", "treat",
+            "fix", "stain", "mount", "image",
+            "were added", "was added", "were mixed",
+            "were incubated", "was incubated",
+            "were washed", "was washed",
+        ]
+        
+        has_procedural = any(indicator in text_lower for indicator in procedural_indicators)
+        
+        return matches >= 2 and not has_procedural
+    
+    @classmethod  
+    def seems_procedural(cls, text: str) -> bool:
+        """
+        Check if text seems like it describes a procedural step,
+        even if we don't recognize the specific action.
+        """
+        text_lower = text.lower().strip()
+        
+        procedural_indicators = [
+            # Direct action verbs
+            "add", "remove", "wash", "incubate", "mix",
+            "centrifuge", "pipet", "transfer", "dilute",
+            "culture", "plate", "seed", "treat",
+            "fix", "stain", "mount", "image", "prepare",
+            "collect", "harvest", "extract", "purify",
+            
+            # Past tense experimental actions
+            "were added", "was added", "were mixed", "was mixed",
+            "were incubated", "was incubated", "were treated", "was treated",
+            "were washed", "was washed", "were centrifuged", "was centrifuged",
+            "were cultured", "was cultured", "were prepared", "was prepared",
+            
+            # Experimental parameters
+            "for ", " min", " hour", " day", "°c", "rpm",
+            "ml", "μl", "μg", "mg", "ng", "mm", "μm",
+            "concentration", "volume", "temperature", "speed",
+            
+            # Procedural time/sequence words
+            "then", "next", "subsequently", "after", "before",
+            "following", "prior to", "until", "step",
+        ]
+        
+        return any(indicator in text_lower for indicator in procedural_indicators)
     
     @classmethod
     def get_all_actions(cls) -> List[str]:

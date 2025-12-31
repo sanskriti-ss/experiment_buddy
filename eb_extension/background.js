@@ -16,14 +16,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'analyze-procedure-from-document') {
     analyzeProcedureFromDocument(request.payload)
       .then(result => {
+        console.log('[BG] Sending successful result to content script:', result);
         sendResponse({ success: true, result });
       })
       .catch(error => {
         console.error('[BG] Error:', error);
-        sendResponse({
+        const errorResponse = {
           success: false,
           error: error.message || 'Analysis failed',
-        });
+        };
+        console.log('[BG] Sending error response to content script:', errorResponse);
+        sendResponse(errorResponse);
       });
 
     // Return true to indicate we'll send response asynchronously
@@ -77,12 +80,32 @@ async function analyzeProcedureFromDocument(payload) {
     }
 
     const result = await response.json();
-    console.log('[BG] Analysis complete');
+    console.log('[BG] Analysis complete', result);
 
+    // Handle review article detection
+    if (!result.success && result.error === 'review_article_detected') {
+      // Pass through the review article response for special handling
+      return {
+        success: false,
+        error: result.error,
+        message: result.message,
+        suggestion: result.suggestion,
+        review_check: result.review_check,
+        metadata: result.metadata
+      };
+    }
+
+    // Handle other errors
+    if (!result.success) {
+      throw new Error(result.error || 'Analysis failed');
+    }
+
+    // Map the successful response to the format expected by content script
     return {
       extracted_procedure: result.procedure_ir || null,
       analysis: result.analysis || null,
       validation_errors: result.validation_errors || [],
+      replicability_gaps: result.replicability_gaps || [],
       metadata: result.metadata || {},
     };
   } catch (error) {
@@ -95,7 +118,8 @@ async function analyzeProcedureFromDocument(payload) {
       );
     }
 
-    throw error;
+    // Re-throw with more context
+    throw new Error(`Analysis failed: ${error.message}`);
   }
 }
 

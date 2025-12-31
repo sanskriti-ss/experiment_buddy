@@ -493,13 +493,74 @@ function analyzeText(text, source) {
         STATE.lastAnalysisResult = response.result;
         showAnalysisResult(response.result);
       } else {
-        showNotification(
-          response?.error || 'Analysis failed',
-          'error'
-        );
+        // Handle review article detection - can come from result or directly from response
+        const reviewInfo = response?.result || response;
+        if (reviewInfo && reviewInfo.error === 'review_article_detected') {
+          showReviewArticleNotification(reviewInfo);
+        } else {
+          showNotification(
+            response?.result?.error || response?.error || 'Analysis failed',
+            'error'
+          );
+        }
       }
     }
   );
+}
+
+/**
+ * Show a specialized notification for review articles
+ */
+function showReviewArticleNotification(response) {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fef3cd;
+    border: 1px solid #facc15;
+    color: #713f12;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    z-index: 9999999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  `;
+
+  const reviewData = response.review_check || {};
+  
+  notification.innerHTML = `
+    <div style="display: flex; align-items: flex-start;">
+      <div style="margin-right: 12px; font-size: 20px;">⚠️</div>
+      <div>
+        <div style="font-weight: 600; margin-bottom: 8px;">Review Article Detected</div>
+        <div style="margin-bottom: 8px;">${response.message || 'This appears to be a review article rather than original research with methods.'}</div>
+        <div style="margin-bottom: 12px; font-style: italic;">${response.suggestion || 'Please select a Methods section from an original research paper.'}</div>
+        ${reviewData.confidence ? `<div style="font-size: 12px; color: #92400e;">Confidence: ${Math.round(reviewData.confidence * 100)}%</div>` : ''}
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        color: #92400e;
+        padding: 0;
+        margin-left: auto;
+      ">×</button>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 10000);
 }
 
 /**
@@ -550,6 +611,13 @@ function formatMissingParameters(missingParams) {
  * Display analysis results in a modal/panel
  */
 function showAnalysisResult(result) {
+  console.log('[Experiment Buddy] Showing analysis result:', result);
+  
+  if (!result) {
+    showNotification('No analysis result received', 'error');
+    return;
+  }
+
   // Create a modal
   const modal = document.createElement('div');
   modal.id = 'experiment-buddy-results-modal';
@@ -581,7 +649,8 @@ function showAnalysisResult(result) {
   // Build result HTML
   let html = '<h2 style="margin-top: 0; color: #2563eb;">Analysis Results</h2>';
 
-  if (result.extracted_procedure) {
+  // Show extracted procedure info
+  if (result.extracted_procedure && result.extracted_procedure.steps) {
     const procedure = result.extracted_procedure;
     html += `
       <div style="margin-bottom: 20px;">
@@ -590,6 +659,22 @@ function showAnalysisResult(result) {
           <strong>Steps:</strong> ${procedure.steps?.length || 0}
         </p>
         ${procedure.citation ? `<p style="color: #666; margin: 4px 0;"><strong>Source:</strong> ${procedure.citation}</p>` : ''}
+      </div>
+    `;
+  } else if (result.extracted_procedure) {
+    html += `
+      <div style="margin-bottom: 20px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+        <p style="color: #666; margin: 0;">
+          ⚠️ Procedure was extracted but may not contain clear experimental steps.
+        </p>
+      </div>
+    `;
+  } else {
+    html += `
+      <div style="margin-bottom: 20px; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;">
+        <p style="color: #856404; margin: 0;">
+          ⚠️ No experimental procedure could be extracted from the text.
+        </p>
       </div>
     `;
   }

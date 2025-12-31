@@ -173,6 +173,24 @@ async def extract_procedure(request: ExtractRequest):
         # Extract procedure using LLM
         extractor = LLMExtractor(model=request.model)
         
+        # First check if this is a review article
+        review_check = await check_if_review_article(text, extractor)
+        
+        if review_check.get("is_review", False) and review_check.get("confidence", 0) > 0.7:
+            return {
+                "success": False,
+                "error": "review_article_detected",
+                "message": review_check.get("reason", "This appears to be a review article"),
+                "suggestion": review_check.get("suggestion", "Please select a Methods section from an original research paper"),
+                "review_check": review_check,
+                "metadata": {
+                    "source": request.source,
+                    "platform": request.metadata.platform if request.metadata else None,
+                    "model": request.model,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            }
+        
         # Build citation from metadata
         citation = None
         if request.metadata:
@@ -351,6 +369,77 @@ Be thorough but concise. Focus on the most critical gaps that would prevent succ
         return ["Unable to analyze replicability gaps - please check methodology manually"]
 
 
+async def check_if_review_article(text: str, extractor: LLMExtractor) -> dict:
+    """
+    Check if the content is a review article rather than containing actual methods.
+    
+    Returns a dictionary with:
+    - is_review: bool
+    - confidence: float (0-1)
+    - reason: str
+    - suggestion: str
+    """
+    review_check_prompt = f"""You are an expert at distinguishing between different types of scientific content. Analyze the following text and determine if this is a review article or if it contains actual experimental methodology.
+
+Text to analyze:
+{text[:2000]}...
+
+Please determine:
+1. Is this primarily a review article that summarizes and discusses other research?
+2. Does it contain actual step-by-step experimental procedures that could be replicated?
+3. What type of content is this?
+
+Respond in this exact JSON format:
+{{
+  "is_review": true/false,
+  "confidence": 0.0-1.0,
+  "content_type": "review_article" | "methods_section" | "introduction" | "discussion" | "mixed_content",
+  "reason": "Brief explanation of why you classified it this way",
+  "suggestion": "What the user should do instead (if it's a review)"
+}}
+
+Examples:
+- If text discusses "methods have been developed" or "studies have shown" → likely review
+- If text says "we cultured cells" or "samples were incubated" → likely methods
+- If text explains background without procedures → likely introduction/review"""
+
+    try:
+        from dedalus_labs import AsyncDedalus, DedalusRunner
+        
+        client = AsyncDedalus(api_key=extractor.api_key)
+        runner = DedalusRunner(client)
+        
+        response = await runner.run(
+            input=review_check_prompt,
+            model=extractor.model
+        )
+        
+        # Parse JSON response
+        import re
+        json_match = re.search(r'\{.*?\}', response.final_output, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group())
+            return result
+        else:
+            return {
+                "is_review": False,
+                "confidence": 0.5,
+                "content_type": "unknown",
+                "reason": "Could not parse LLM response",
+                "suggestion": "Try selecting a clear Methods section"
+            }
+            
+    except Exception as e:
+        print(f"Error in review article check: {e}")
+        return {
+            "is_review": False,
+            "confidence": 0.5,
+            "content_type": "unknown", 
+            "reason": f"Analysis failed: {str(e)}",
+            "suggestion": "Try selecting a clear Methods section"
+        }
+
+
 def analyze_procedure_completeness(procedure_ir: dict) -> dict:
     """
     Analyze the completeness of an extracted procedure.
@@ -376,15 +465,16 @@ def analyze_procedure_completeness(procedure_ir: dict) -> dict:
     for step in steps:
         action = step.get("action", "unknown")
         params = [p.get("name", "") for p in step.get("parameters", [])]
+        raw_text = step.get("raw_text", "")
         
         # Check what's missing
         missing = ActionRequirements.check_missing_params(action, params)
-        score = ActionRequirements.get_completeness_score(action, params)
+        score = ActionRequirements.get_completeness_score(action, params, raw_text)
         
         step_analysis = {
             "id": step.get("id", ""),
             "action": action,
-            "text": step.get("raw_text", "")[:100] + "..." if len(step.get("raw_text", "")) > 100 else step.get("raw_text", ""),
+            "text": raw_text[:100] + "..." if len(raw_text) > 100 else raw_text,
             "parameters_found": len(params),
             "missing_parameters": missing,
             "completeness_score": score,
