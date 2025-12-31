@@ -115,13 +115,13 @@ async function checkBackendStatus() {
 
     if (response.ok) {
       state.backendConnected = true;
-      updateBackendStatus('✅ Backend connected', 'connected');
+      updateBackendStatus('Backend connected', 'connected');
     } else {
       throw new Error(`Backend returned ${response.status}`);
     }
   } catch (error) {
     state.backendConnected = false;
-    updateBackendStatus('❌ Backend unavailable', 'disconnected');
+    updateBackendStatus('Backend unavailable', 'disconnected');
     console.error('Backend check failed:', error);
   }
 }
@@ -277,7 +277,7 @@ function hideInstructions() {
  * Show error message
  */
 function showError(message) {
-  updateBackendStatus(`❌ ${message}`, 'disconnected');
+  updateBackendStatus(`${message}`, 'disconnected');
 }
 
 console.log('[Popup] Script loaded');

@@ -20,12 +20,47 @@ const STATE = {
 };
 
 /**
+ * Check if extension context is still valid
+ */
+function isExtensionContextValid() {
+  try {
+    return chrome.runtime && chrome.runtime.id;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Safely send message with context validation
+ */
+function safeSendMessage(message, callback) {
+  if (!isExtensionContextValid()) {
+    console.warn('[Experiment Buddy] Extension context invalidated');
+    showNotification('Extension was reloaded. Please refresh the page to continue.', 'warning');
+    return;
+  }
+  
+  try {
+    chrome.runtime.sendMessage(message, callback);
+  } catch (error) {
+    console.error('[Experiment Buddy] Error sending message:', error);
+    showNotification('Extension communication error. Please refresh the page.', 'error');
+  }
+}
+
+/**
  * Initialize the extension on the page
  */
 function initializeExtension() {
   console.log('[Experiment Buddy] Initializing on page...', window.location.href);
 
   try {
+    // Check if extension context is valid
+    if (!isExtensionContextValid()) {
+      console.warn('[Experiment Buddy] Extension context invalid at initialization');
+      return;
+    }
+
     // Check if dependencies are loaded
     if (typeof PlatformDetector === 'undefined') {
       console.warn('[Experiment Buddy] PlatformDetector not loaded, using fallback');
@@ -163,10 +198,33 @@ function initializeExtension() {
     // Mark as ready
     STATE.isExtensionReady = true;
 
+    // Start periodic health check
+    startHealthCheck();
+
     console.log('[Experiment Buddy] Ready on', adapter.platformName);
   } catch (error) {
     console.error('[Experiment Buddy] Initialization failed:', error);
   }
+}
+
+/**
+ * Start periodic health check to monitor extension context
+ */
+function startHealthCheck() {
+  setInterval(() => {
+    if (!isExtensionContextValid() && STATE.isExtensionReady) {
+      console.warn('[Experiment Buddy] Extension context lost, disabling UI');
+      STATE.isExtensionReady = false;
+      
+      // Update UI to show context lost
+      const button = document.getElementById('experiment-buddy-button');
+      if (button) {
+        button.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+        button.title = 'Extension context lost - Please refresh page';
+        button.innerHTML = '⚠️';
+      }
+    }
+  }, 5000); // Check every 5 seconds
 }
 
 /**
@@ -187,18 +245,19 @@ function injectUI() {
   // Create button
   const button = document.createElement('button');
   button.id = 'experiment-buddy-button';
-  button.innerHTML = '🔬';
+  button.innerHTML = 'EB';
   button.title = 'Analyze Experiment Procedure';
   button.style.cssText = `
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     border: none;
     color: white;
-    font-size: 28px;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
     transition: all 0.3s ease;
     padding: 0;
     display: flex;
@@ -208,15 +267,22 @@ function injectUI() {
 
   button.addEventListener('mouseenter', () => {
     button.style.transform = 'scale(1.1)';
-    button.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.6)';
+    button.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.6)';
   });
 
   button.addEventListener('mouseleave', () => {
     button.style.transform = 'scale(1)';
-    button.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+    button.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)';
   });
 
-  button.addEventListener('click', handleAnalyzeClick);
+  button.addEventListener('click', () => {
+    // Check extension context before handling click
+    if (!isExtensionContextValid()) {
+      showNotification('Extension was reloaded. Please refresh the page to continue.', 'warning');
+      return;
+    }
+    handleAnalyzeClick();
+  });
 
   // Create menu
   const menu = document.createElement('div');
@@ -398,8 +464,8 @@ function analyzeText(text, source) {
   // Show loading state
   showNotification('Analyzing procedure...', 'info');
 
-  // Send to background script for processing
-  chrome.runtime.sendMessage(
+  // Send to background script for processing with safe message handling
+  safeSendMessage(
     {
       action: 'analyze-procedure-from-document',
       payload: {
@@ -410,8 +476,15 @@ function analyzeText(text, source) {
       },
     },
     (response) => {
+      // Check for extension context invalidation
       if (chrome.runtime.lastError) {
-        console.error('[Experiment Buddy] Error:', chrome.runtime.lastError);
+        console.error('[Experiment Buddy] Runtime error:', chrome.runtime.lastError);
+        
+        if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
+          showNotification('Extension was reloaded. Please refresh the page to continue.', 'warning');
+          return;
+        }
+        
         showNotification('Error: ' + chrome.runtime.lastError.message, 'error');
         return;
       }
@@ -427,6 +500,50 @@ function analyzeText(text, source) {
       }
     }
   );
+}
+
+/**
+ * Format missing parameters into human-friendly descriptions
+ */
+function formatMissingParameters(missingParams) {
+  const paramMap = {
+    'duration': 'how long to perform this step',
+    'temperature': 'temperature setting',
+    'concentration': 'concentration amount',
+    'volume': 'volume measurement',
+    'reagent': 'specific reagent or chemical name',
+    'antibody': 'antibody name and concentration',
+    'time': 'timing information',
+    'speed': 'centrifuge or mixing speed',
+    'buffer': 'buffer solution details',
+    'medium': 'culture medium type',
+    'cell_line': 'specific cell line used',
+    'passage_number': 'cell passage number',
+    'seeding_density': 'cell seeding density',
+    'incubation_time': 'incubation duration',
+    'incubation_temperature': 'incubation temperature',
+    'wash_buffer': 'washing buffer type',
+    'wash_steps': 'number of wash steps',
+    'centrifuge_speed': 'centrifugation speed',
+    'centrifuge_time': 'centrifugation duration',
+    'dilution': 'dilution ratio',
+    'ph': 'pH level',
+    'osmolarity': 'osmolarity value',
+    'fixation_time': 'fixation duration',
+    'permeabilization': 'permeabilization method',
+    'blocking_solution': 'blocking solution details',
+    'primary_antibody': 'primary antibody information',
+    'secondary_antibody': 'secondary antibody details',
+    'microscope_settings': 'microscopy parameters',
+    'magnification': 'magnification level',
+    'exposure_time': 'camera exposure time',
+    'wavelength': 'light wavelength or filter',
+    'objective': 'microscope objective lens'
+  };
+
+  return missingParams.map(param => 
+    paramMap[param] || param.replace(/_/g, ' ')
+  ).join(', ');
 }
 
 /**
@@ -462,13 +579,13 @@ function showAnalysisResult(result) {
   `;
 
   // Build result HTML
-  let html = '<h2 style="margin-top: 0; color: #667eea;">Analysis Results</h2>';
+  let html = '<h2 style="margin-top: 0; color: #2563eb;">Analysis Results</h2>';
 
   if (result.extracted_procedure) {
     const procedure = result.extracted_procedure;
     html += `
       <div style="margin-bottom: 20px;">
-        <h3 style="color: #333; margin-bottom: 8px;">📋 Extracted Procedure</h3>
+        <h3 style="color: #333; margin-bottom: 8px;">Extracted Procedure</h3>
         <p style="color: #666; margin: 0;">
           <strong>Steps:</strong> ${procedure.steps?.length || 0}
         </p>
@@ -481,21 +598,60 @@ function showAnalysisResult(result) {
     const analysis = result.analysis;
     html += `
       <div style="margin-bottom: 20px;">
-        <h3 style="color: #333; margin-bottom: 8px;">📊 Completeness Analysis</h3>
+        <h3 style="color: #333; margin-bottom: 8px;">Completeness Analysis</h3>
         <p style="color: #666; margin: 0;">
           <strong>Complete Steps:</strong> ${analysis.complete_steps || 0} / ${analysis.total_steps || 0}
         </p>
         <p style="color: #666; margin: 4px 0;">
-          <strong>Issues Found:</strong> ${analysis.incomplete_steps || 0}
+          <strong>Overall Score:</strong> ${Math.round((analysis.overall_score || 0) * 100)}%
         </p>
       </div>
     `;
 
-    if (analysis.incomplete_steps && analysis.incomplete_steps > 0) {
+    // Show detailed missing information if available
+    if (analysis.steps && analysis.steps.length > 0) {
+      const incompleteSteps = analysis.steps.filter(step => !step.is_complete);
+      
+      if (incompleteSteps.length > 0) {
+        html += `
+          <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+            <h4 style="margin-top: 0; color: #856404;">Missing Details for Reproducibility:</h4>
+        `;
+        
+        incompleteSteps.forEach((step, index) => {
+          const stepNumber = analysis.steps.indexOf(step) + 1;
+          const actionType = step.action.replace(/_/g, ' ');
+          const missingParams = step.missing_parameters || [];
+          
+          if (missingParams.length > 0) {
+            html += `
+              <div style="margin-bottom: 12px; padding: 8px; background: rgba(255, 255, 255, 0.7); border-radius: 4px;">
+                <p style="margin: 0 0 4px 0; font-weight: bold; color: #856404;">
+                  Step ${stepNumber} (${actionType}):
+                </p>
+                <p style="margin: 0; color: #856404; font-size: 14px;">
+                  Missing: ${formatMissingParameters(missingParams)}
+                </p>
+              </div>
+            `;
+          }
+        });
+        
+        html += `</div>`;
+      } else {
+        html += `
+          <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #155724;">
+              All procedure steps contain the necessary details for reproducibility!
+            </p>
+          </div>
+        `;
+      }
+    } else if (analysis.incomplete_steps && analysis.incomplete_steps > 0) {
       html += `
         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
           <p style="margin: 0; color: #856404;">
-            ⚠️ Some procedure steps are missing required details for reproducibility.
+            Some procedure steps are missing required details for reproducibility.
           </p>
         </div>
       `;
@@ -504,10 +660,25 @@ function showAnalysisResult(result) {
 
   if (result.validation_errors && result.validation_errors.length > 0) {
     html += `
-      <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px;">
-        <h4 style="margin-top: 0; color: #721c24;">Issues Found:</h4>
+      <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0; color: #721c24;">Schema Validation Issues:</h4>
         <ul style="margin: 8px 0; padding-left: 20px; color: #721c24;">
           ${result.validation_errors.map(err => `<li>${err}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  // Add replicability gaps analysis
+  if (result.replicability_gaps && result.replicability_gaps.length > 0) {
+    html += `
+      <div style="background: #e8f4fd; border: 1px solid #2563eb; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0; color: #1e40af;">Replicability Analysis:</h4>
+        <p style="margin: 0 0 8px 0; color: #1e40af; font-size: 14px;">
+          Specific details needed for another researcher to replicate this work:
+        </p>
+        <ul style="margin: 8px 0; padding-left: 20px; color: #1e40af;">
+          ${result.replicability_gaps.map(gap => `<li style="margin-bottom: 6px;">${gap}</li>`).join('')}
         </ul>
       </div>
     `;
@@ -739,6 +910,13 @@ if (document.readyState === 'loading') {
 // Set up message listener immediately (don't wait for initialization)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Experiment Buddy] Global message received:', request.action);
+  
+  // Check if extension context is still valid
+  if (!isExtensionContextValid()) {
+    console.warn('[Experiment Buddy] Extension context invalidated, ignoring message');
+    sendResponse({ error: 'Extension context invalidated' });
+    return false;
+  }
   
   if (request.action === 'ping') {
     sendResponse({ pong: true, initialized: STATE.isExtensionReady });

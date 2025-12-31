@@ -7,7 +7,7 @@ experimental procedures from note-taking platforms like Google Docs, Notion, etc
 
 import os
 import json
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
@@ -99,6 +99,57 @@ async def health_check():
     }
 
 
+def make_errors_user_friendly(validation_errors: List[str]) -> List[str]:
+    """Convert technical validation errors to user-friendly descriptions."""
+    if not validation_errors:
+        return []
+    
+    user_friendly = []
+    
+    for error in validation_errors:
+        # Parse common error patterns and make them readable
+        if "'add' is not one of" in error:
+            user_friendly.append("Step uses 'add' action - this should be changed to 'add_reagent' for adding chemicals/reagents")
+        elif "'replace' is not one of" in error:
+            user_friendly.append("Step uses 'replace' action - this should be changed to 'aspirate' + 'add_reagent' for medium changes")
+        elif "'seed' is not one of" in error:
+            user_friendly.append("Step uses 'seed' action - this is now supported for cell seeding procedures")
+        elif "'media_change' is not one of" in error:
+            user_friendly.append("Step uses 'media_change' action - this is now supported for cell culture protocols")
+        elif "'extract' is not one of" in error:
+            user_friendly.append("Step uses 'extract' action - this is now supported for sample extraction procedures")
+        elif "is not one of" in error and "action" in error:
+            # Extract the action name from error message
+            parts = error.split("'")
+            if len(parts) >= 2:
+                action = parts[1]
+                user_friendly.append(f"Step uses '{action}' action - consider using a more specific action type like 'add_reagent', 'incubate', 'wash', etc.")
+            else:
+                user_friendly.append("Step uses an unrecognized action type - check if a more specific action would be appropriate")
+        elif "temperature" in error.lower():
+            user_friendly.append("Temperature information is missing or unclear - specify exact temperature with units (°C)")
+        elif "duration" in error.lower():
+            user_friendly.append("Time duration is missing or unclear - specify exact timing (e.g., '30 minutes', '2 hours')")
+        elif "concentration" in error.lower():
+            user_friendly.append("Reagent concentration is missing - specify exact amounts and units (e.g., '10 μM', '2 mg/ml')")
+        elif "volume" in error.lower():
+            user_friendly.append("Volume information is missing - specify exact volumes (e.g., '500 μl', '2 ml')")
+        elif "required" in error.lower():
+            user_friendly.append("Required information is missing from this step - check that all essential details are included")
+        else:
+            # For other errors, try to make them more readable
+            clean_error = error.replace("Error at steps -> ", "Step ")
+            clean_error = clean_error.replace(" -> ", " ")
+            clean_error = clean_error.replace("Error: ", "")
+            user_friendly.append(f"Issue: {clean_error}")
+            clean_error = error.replace("Error at steps -> ", "Step ")
+            clean_error = clean_error.replace(" -> ", " ")
+            clean_error = clean_error.replace("Error: ", "")
+            user_friendly.append(f"Warning: {clean_error}")
+    
+    return user_friendly
+
+
 @app.post("/extract")
 async def extract_procedure(request: ExtractRequest):
     """
@@ -141,15 +192,22 @@ async def extract_procedure(request: ExtractRequest):
         # Validate the extracted procedure
         validator = ProcedureValidator()
         validation_errors = validator.validate(procedure_ir)
+        user_friendly_errors = make_errors_user_friendly(validation_errors)
         
         # Analyze completeness of each step
         analysis = analyze_procedure_completeness(procedure_ir)
+        
+        # Add replicability gap analysis as fallback when procedures don't match specific schemas
+        # This provides LLM-based analysis for domain-specific replicability issues
+        replicability_gaps = await analyze_replicability_gaps(text, extractor)
         
         return {
             "success": True,
             "procedure_ir": procedure_ir,
             "analysis": analysis,
-            "validation_errors": validation_errors,
+            "validation_errors": user_friendly_errors,
+            "replicability_gaps": replicability_gaps,
+            "technical_errors": validation_errors,  # Keep technical errors for debugging
             "metadata": {
                 "source": request.source,
                 "platform": request.metadata.platform if request.metadata else None,
@@ -199,6 +257,7 @@ async def extract_paper_procedure(request: PaperRequest):
         # Validate
         validator = ProcedureValidator()
         validation_errors = validator.validate(procedure_ir)
+        user_friendly_errors = make_errors_user_friendly(validation_errors)
         
         # Analyze completeness
         analysis = analyze_procedure_completeness(procedure_ir)
@@ -212,7 +271,8 @@ async def extract_paper_procedure(request: PaperRequest):
             },
             "procedure_ir": procedure_ir,
             "analysis": analysis,
-            "validation_errors": validation_errors
+            "validation_errors": user_friendly_errors,
+            "technical_errors": validation_errors
         }
         
     except HTTPException:
@@ -223,6 +283,73 @@ async def extract_paper_procedure(request: PaperRequest):
 
 
 # ============= Helper Functions =============
+
+async def analyze_replicability_gaps(text: str, extractor: LLMExtractor) -> List[str]:
+    """
+    Use LLM to identify specific replicability gaps in methodology text.
+    
+    This function provides a fallback analysis when structured JSON validation
+    doesn't capture domain-specific replicability issues.
+    """
+    replicability_prompt = f"""You are an expert in research methodology and reproducibility. Analyze the following experimental methods section and identify specific details that are missing or unclear, which would prevent another researcher from replicating this work.
+
+Focus on practical, actionable feedback. For each issue you identify, explain what specific information needs to be added or clarified.
+
+Methods text to analyze:
+{text}
+
+Please provide a concise list of missing or unclear details that impact replicability. For each item, be specific about:
+1. What information is missing
+2. Why it's needed for replication
+3. What should be specified instead
+
+Format your response as a JSON array of strings, where each string describes one specific replicability gap. Example:
+[
+  "Cell seeding density not specified - need exact number of cells per well for consistent results",
+  "Antibody incubation temperature missing - primary antibody effectiveness varies significantly with temperature",
+  "Centrifugation speed not provided - different speeds will affect cell pellet formation and viability"
+]
+
+Be thorough but concise. Focus on the most critical gaps that would prevent successful replication."""
+
+    try:
+        from dedalus_labs import AsyncDedalus, DedalusRunner
+        
+        client = AsyncDedalus(api_key=extractor.api_key)
+        runner = DedalusRunner(client)
+        
+        response = await runner.run(
+            input=replicability_prompt,
+            model=extractor.model
+        )
+        
+        # Parse JSON response
+        gaps_text = response.final_output.strip()
+        
+        # Extract JSON array from response
+        import re
+        json_match = re.search(r'\[.*?\]', gaps_text, re.DOTALL)
+        if json_match:
+            gaps = json.loads(json_match.group())
+            return gaps if isinstance(gaps, list) else []
+        else:
+            # Fallback: split by lines and clean up
+            lines = gaps_text.split('\n')
+            gaps = []
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('[') and not line.startswith(']'):
+                    # Remove bullet points, numbers, quotes
+                    line = re.sub(r'^[\d\.\-\*\"\s]+', '', line)
+                    line = line.strip('\'"')
+                    if line:
+                        gaps.append(line)
+            return gaps[:10]  # Limit to 10 most important gaps
+            
+    except Exception as e:
+        print(f"Error in replicability analysis: {e}")
+        return ["Unable to analyze replicability gaps - please check methodology manually"]
+
 
 def analyze_procedure_completeness(procedure_ir: dict) -> dict:
     """
@@ -293,7 +420,7 @@ if __name__ == "__main__":
     
     print(f"""
     ╔══════════════════════════════════════════════════════════╗
-    ║          🔬 Experiment Buddy API Server                  ║
+    ║          Experiment Buddy API Server                     ║
     ╠══════════════════════════════════════════════════════════╣
     ║  Server running at: http://{args.host}:{args.port}                 ║
     ║  API docs at:       http://{args.host}:{args.port}/docs            ║
