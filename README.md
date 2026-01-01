@@ -2,6 +2,11 @@
 
 A chrome extension prototype: just run it on any research paper that you're interested in replicating (in order to get a quick look for what is missing from the protocol that would be good to specify), or any proposed protocol doc that you wrote (to get suggestions on what you can improve in your research protocol, or any confounders that you are missing).
 
+Here are a couple of screenshots of what you see in the extension.
+
+![Screenshot 1](screenshots/ss1.png)
+![Screenshot 2](screenshots/ss2.png)
+
 ## Features
 
 ### 1. Experiment Plan Validation
