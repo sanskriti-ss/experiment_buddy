@@ -22,35 +22,18 @@ Automatically extracts and analyzes experimental procedures from scientific pape
 
 ## 3. Architecture
 
-The system is built with modularity in mind:
+The system is built to be modular and adapt to new applications:
 
 1. **Canonical Schema**: Platform-agnostic experiment plan model (JSON Schema)
 2. **Lint Engine**: Pure functions that validate plans and produce findings
 3. **Adapters**: Platform-specific integrations (Benchling, Google Docs, etc.)
 4. **Renderers**: Output formatting for different contexts
 
-## Current Status: Step 2 Complete 
-
 ## Schema Structure
 
-The `experiment_plan_microscopy_v0.schema.json` defines:
-
-### Core Sections
-- **Study**: Objective, assay type, primary outcomes
-- **Design**: Conditions, replicates, randomization, controls
-- **Samples**: Sample type, preparation, fluorophores, plate layout
-- **Acquisition**: Microscope setup, channels, z-stack, time-lapse, environment, QC plan
-- **Processing Plan**: Analysis steps and software
-- **Outputs**: Raw data format, storage, naming conventions
-
-### Why These Fields Matter
-
-The schema is designed around common failure modes in microscopy:
-
-1. **Controls & QC**: Unstained samples, single-color controls, calibration beads - all explicitly tracked because they're often forgotten
-2. **Batch Variables**: Date, operator, instrument_id, etc. - critical for detecting confounders later
-3. **Acquisition Parameters**: Channel settings, z-step size, exposure times - affects data quality and Nyquist sampling
-4. **OME Compatibility**: Aligned with Open Microscopy Environment standards for interoperability
+For an example of something I'm trying out:
+- including customized jsons for different research papers, so the LLM is more critical of what it's looking for.
+- e.g. `experiment_plan_microscopy_v0.schema.json'
 
 ## Installation
 
@@ -69,7 +52,7 @@ export DEDALUS_API_KEY="your_key_here"
 
 ## Usage
 
-### Extract Procedure from a Paper (NEW!)
+### Extract Procedure from a Paper
 
 ```bash
 # Extract from DOI
@@ -214,53 +197,10 @@ Paper URL → PaperFetcher → Methods Text → LLMExtractor → Procedure IR �
 
 4. **Deterministic validation**: Even though extraction uses LLM, the completeness checking is rule-based and testable.
 
-### Using with Chrome Extension (Future)
-
-The current implementation is a **standalone CLI tool**. For browser integration:
-
-1. **Option A**: Build a simple Chrome extension that:
-   - Captures current URL
-   - Calls the CLI tool via a local Python server
-   - Displays results in a popup
-
-2. **Option B**: Create a FastAPI backend that wraps the extraction pipeline, then build extension as thin UI client
-
-The core logic stays in Python where it's testable and maintainable.
-
-## File Structure
-
-```
-experiment_buddy/
-├── schemas/
-│   ├── experiment_plan_microscopy_v0.schema.json
-│   └── procedure_ir_v0.schema.json              # NEW: Procedure IR schema
-├── examples/
-│   ├── heart_organoid_fluorescence_plan.json
-│   ├── invalid_plan_missing_replicates.json
-│   ├── procedure_ir_from_paper.json             # NEW: Example extracted procedure
-│   └── paper_analysis_report.json               # NEW: Example analysis report
-├── planlint/
-│   ├── __init__.py
-│   ├── validator.py           # Core validation logic
-│   ├── validate.py            # CLI entry point
-│   ├── paper_fetcher.py       # NEW: Fetch papers with LLM + Exa
-│   ├── llm_extractor.py       # NEW: Extract structured procedures
-│   ├── procedure_validator.py # NEW: Validate procedure IR
-│   ├── action_requirements.py # NEW: Define required params per action
-│   └── cli.py                 # NEW: Main CLI tool
-├── tests/
-│   ├── __init__.py
-│   ├── test_validator.py
-│   └── test_paper_extraction.py  # NEW: Tests for paper extraction
-├── requirements.txt
-├── pyproject.toml
-├── .env                       # Optional: DEDALUS_API_KEY
-└── README.md
-```
 
 ## References
 
-The schema design is informed by:
+The schema design for the sample json is informed by:
 - Open Microscopy Environment (OME) metadata standards
 - QUAREP-LiMi microscopy quality initiatives
 - Nyquist sampling principles for z-stack acquisition
